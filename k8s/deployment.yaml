@@ -1,0 +1,87 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: db-perf-mcp-server
+  namespace: db
+  labels:
+    app: db-perf-mcp-server
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: db-perf-mcp-server
+  template:
+    metadata:
+      labels:
+        app: db-perf-mcp-server
+    spec:
+      containers:
+        - name: db-perf-mcp-server
+          image: xxxxx.xxxxxx.com/prd/db-perf-mcp-server:1.0.0
+          ports:
+            - containerPort: 8000
+          env:
+            - name: DB_USER
+              valueFrom:
+                secretKeyRef:
+                  name: db-perf-mcp-secret
+                  key: db-user
+            - name: DB_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: db-perf-mcp-secret
+                  key: db-password
+            - name: VALKEY_USERNAME
+              valueFrom:
+                secretKeyRef:
+                  name: db-perf-mcp-secret
+                  key: valkey-username
+            - name: VALKEY_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: db-perf-mcp-secret
+                  key: valkey-password
+            - name: DATABASES
+              valueFrom:
+                secretKeyRef:
+                  name: db-perf-mcp-secret
+                  key: databases
+          resources:
+            requests:
+              memory: "256Mi"
+              cpu: "100m"
+            limits:
+              memory: "512Mi"
+              cpu: "250m"
+          livenessProbe:
+            tcpSocket:
+              port: 8000
+            initialDelaySeconds: 10
+            periodSeconds: 30
+          readinessProbe:
+            tcpSocket:
+              port: 8000
+            initialDelaySeconds: 5
+            periodSeconds: 10
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: db-perf-mcp-server
+  namespace: db
+spec:
+  selector:
+    app: db-perf-mcp-server
+  ports:
+    - protocol: TCP
+      port: 80
+      targetPort: 8000
+  type: ClusterIP
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: db-perf-mcp-server
+  namespace: db
+  annotations:
+    eks.amazonaws.com/role-arn: arn:aws:iam::111111111111:role/iam-role-dba

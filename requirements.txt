@@ -1,0 +1,6 @@
+mcp
+uvicorn
+starlette
+asyncpg>=0.30.0
+aiomysql>=0.2.0
+valkey>=6.0.0
